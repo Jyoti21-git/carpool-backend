@@ -1,10 +1,15 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.jwt import create_access_token
+from app.auth.dependencies import get_current_user
+from app.auth.jwt import (
+    create_access_token,
+    create_refresh_token,
+    verify_token,
+)
 from app.auth.models import OTP, User
 from app.auth.schemas import (
     SendOtpRequest,
@@ -40,7 +45,7 @@ async def send_otp(
             email=request.email,
             otp=otp,
             expires_at=datetime.utcnow()
-            + timedelta(minutes=2),
+            + timedelta(minutes=10),
         )
     )
 
@@ -95,17 +100,113 @@ async def verify_otp(
             is_verified=True,
         )
         db.add(user)
+        await db.flush()
 
-    await db.delete(otp_record)
-    await db.commit()
-
-    token = create_access_token(
+    access_token = create_access_token(
         request.email
     )
+
+    refresh_token = create_refresh_token(
+        request.email
+    )
+
+    user.refresh_token = refresh_token
+
+    user.refresh_token_expires_at = (
+        datetime.utcnow()
+        + timedelta(days=15)
+    )
+
+    await db.delete(otp_record)
+
+    await db.commit()
 
     return {
         "success": True,
         "message": "OTP verified",
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
+    }
+
+
+@router.get("/me")
+async def get_me(
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    return {
+        "email": current_user.email,
+        "is_verified": current_user.is_verified,
+    }
+
+
+@router.post("/refresh")
+async def refresh_access_token(
+    refresh_token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    payload = verify_token(
+        refresh_token
+    )
+
+    if payload is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid refresh token",
+        )
+
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token type",
+        )
+
+    email = payload.get("sub")
+
+    result = await db.execute(
+        select(User).where(
+            User.email == email
+        )
+    )
+
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    if user.refresh_token != refresh_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Refresh token mismatch",
+        )
+
+    new_access_token = create_access_token(
+        email
+    )
+
+    return {
+        "access_token": new_access_token,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/logout")
+async def logout(
+    current_user: User = Depends(
+        get_current_user
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    current_user.refresh_token = None
+    current_user.refresh_token_expires_at = None
+
+    await db.commit()
+
+    return {
+        "message": "Logged out",
     }
