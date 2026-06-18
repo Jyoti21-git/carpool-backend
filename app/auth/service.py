@@ -172,11 +172,10 @@ please ignore this email.
         subtype="html",
     )
 
-    with smtplib.SMTP(
+    with smtplib.SMTP_SSL(
         "smtp.gmail.com",
-        587,
+        465,
     ) as server:
-        server.starttls()
 
         server.login(
             os.getenv("EMAIL_ADDRESS"),
