@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,18 +33,13 @@ async def send_otp(
 ):
     otp = generate_otp()
 
-    await db.execute(
-        delete(OTP).where(
-            OTP.email == request.email
-        )
-    )
+    await db.execute(delete(OTP).where(OTP.email == request.email))
 
     db.add(
         OTP(
             email=request.email,
             otp=otp,
-            expires_at=datetime.utcnow()
-            + timedelta(minutes=10),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
         )
     )
 
@@ -66,11 +60,7 @@ async def verify_otp(
     request: VerifyOtpRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(OTP).where(
-            OTP.email == request.email
-        )
-    )
+    result = await db.execute(select(OTP).where(OTP.email == request.email))
 
     otp_record = result.scalar_one_or_none()
 
@@ -80,17 +70,22 @@ async def verify_otp(
             "message": "OTP not found",
         }
 
+    if datetime.now(timezone.utc) > otp_record.expires_at:
+        await db.delete(otp_record)
+        await db.commit()
+
+        return {
+            "success": False,
+            "message": "OTP expired",
+        }
+
     if otp_record.otp != request.otp:
         return {
             "success": False,
             "message": "Invalid OTP",
         }
 
-    user_result = await db.execute(
-        select(User).where(
-            User.email == request.email
-        )
-    )
+    user_result = await db.execute(select(User).where(User.email == request.email))
 
     user = user_result.scalar_one_or_none()
 
@@ -99,23 +94,18 @@ async def verify_otp(
             email=request.email,
             is_verified=True,
         )
+
         db.add(user)
+
         await db.flush()
 
-    access_token = create_access_token(
-        request.email
-    )
+    access_token = create_access_token(request.email)
 
-    refresh_token = create_refresh_token(
-        request.email
-    )
+    refresh_token = create_refresh_token(request.email)
 
     user.refresh_token = refresh_token
 
-    user.refresh_token_expires_at = (
-        datetime.utcnow()
-        + timedelta(days=15)
-    )
+    user.refresh_token_expires_at = datetime.now(timezone.utc) + timedelta(days=15)
 
     await db.delete(otp_record)
 
@@ -132,9 +122,7 @@ async def verify_otp(
 
 @router.get("/me")
 async def get_me(
-    current_user: User = Depends(
-        get_current_user
-    ),
+    current_user: User = Depends(get_current_user),
 ):
     return {
         "email": current_user.email,
@@ -147,9 +135,7 @@ async def refresh_access_token(
     refresh_token: str,
     db: AsyncSession = Depends(get_db),
 ):
-    payload = verify_token(
-        refresh_token
-    )
+    payload = verify_token(refresh_token)
 
     if payload is None:
         raise HTTPException(
@@ -165,11 +151,7 @@ async def refresh_access_token(
 
     email = payload.get("sub")
 
-    result = await db.execute(
-        select(User).where(
-            User.email == email
-        )
-    )
+    result = await db.execute(select(User).where(User.email == email))
 
     user = result.scalar_one_or_none()
 
@@ -179,15 +161,22 @@ async def refresh_access_token(
             detail="User not found",
         )
 
+    if (
+        user.refresh_token_expires_at
+        and datetime.now(timezone.utc) > user.refresh_token_expires_at
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Refresh token expired",
+        )
+
     if user.refresh_token != refresh_token:
         raise HTTPException(
             status_code=401,
             detail="Refresh token mismatch",
         )
 
-    new_access_token = create_access_token(
-        email
-    )
+    new_access_token = create_access_token(email)
 
     return {
         "access_token": new_access_token,
@@ -197,9 +186,7 @@ async def refresh_access_token(
 
 @router.post("/logout")
 async def logout(
-    current_user: User = Depends(
-        get_current_user
-    ),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     current_user.refresh_token = None
