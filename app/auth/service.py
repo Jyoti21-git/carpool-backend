@@ -1,7 +1,7 @@
 import os
 import random
 import smtplib
-
+import requests
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
@@ -10,6 +10,32 @@ load_dotenv()
 
 def generate_otp():
     return str(random.randint(100000, 999999))
+
+
+api_key = os.getenv("RESEND_API_KEY")
+
+headers = {
+    "Authorization": f"Bearer {api_key}",
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "from": "onboarding@resend.dev",
+    "to": [email],
+    "subject": "ST Carpool - Login Verification Code",
+    "html": f"<h2>Your OTP is: {otp}</h2>",
+}
+
+response = requests.post(
+    "https://api.resend.com/emails",
+    headers=headers,
+    json=payload,
+)
+
+print("RESEND STATUS:", response.status_code)
+print("RESEND RESPONSE:", response.text)
+
+return
 
 
 def send_otp_email(email: str, otp: str):
@@ -171,12 +197,3 @@ please ignore this email.
         """,
         subtype="html",
     )
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-
-        server.login(
-            os.getenv("EMAIL_ADDRESS"),
-            os.getenv("EMAIL_PASSWORD"),
-        )
-
-        server.send_message(msg)
