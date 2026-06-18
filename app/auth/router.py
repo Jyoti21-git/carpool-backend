@@ -45,11 +45,12 @@ async def send_otp(
 
     await db.commit()
 
-    send_otp_email(
-        request.email,
-        otp,
-    )
+    try:
 
+        send_otp_email(request.email, otp)
+        print("EMAIL SENT SUCCESS")
+    except Exception as e:
+        print("EMAIL ERROR:", str(e))
     return {
         "message": "OTP sent",
     }
