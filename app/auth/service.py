@@ -44,7 +44,9 @@ This OTP is valid for 10 minutes.
 """,
         subtype="html",
     )
-
+    print("SERVER:", os.getenv("BREVO_SMTP_SERVER"))
+    print("PORT:", os.getenv("BREVO_SMTP_PORT"))
+    print("LOGIN:", os.getenv("BREVO_SMTP_LOGIN"))
     with smtplib.SMTP(
         os.getenv("BREVO_SMTP_SERVER"),
         int(os.getenv("BREVO_SMTP_PORT")),
