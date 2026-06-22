@@ -33,6 +33,3 @@ class CompleteProfileRequest(BaseModel):
     profile_photo: str | None = None
 
     # vehicles: list[VehicleRequest]
-
-
-s
