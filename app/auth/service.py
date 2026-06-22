@@ -1,8 +1,7 @@
 import os
 import random
-import smtplib
+import requests
 
-from email.message import EmailMessage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,51 +13,30 @@ def generate_otp():
 
 def send_otp_email(email: str, otp: str):
 
-    msg = EmailMessage()
+    headers = {
+        "accept": "application/json",
+        "api-key": os.getenv("BREVO_API_KEY"),
+        "content-type": "application/json",
+    }
 
-    msg["Subject"] = "ST Carpool - Login Verification Code"
+    payload = {
+        "sender": {"name": "ST Carpool", "email": "jyoti.pundir2109@gmail.com"},
+        "to": [{"email": email}],
+        "subject": "ST Carpool - Login Verification Code",
+        "htmlContent": f"""
+        <h2>ST Carpool</h2>
+        <p>Your OTP is:</p>
+        <h1>{otp}</h1>
+        <p>This OTP is valid for 10 minutes.</p>
+        """,
+    }
 
-    msg["From"] = os.getenv("BREVO_SMTP_LOGIN")
-
-    msg["To"] = email
-
-    msg.set_content(f"""
-ST Carpool
-
-Your OTP is: {otp}
-
-This OTP is valid for 10 minutes.
-""")
-
-    msg.add_alternative(
-        f"""
-<!DOCTYPE html>
-<html>
-<body style="font-family:Arial,sans-serif;padding:20px;">
-    <h2>ST Carpool</h2>
-    <p>Your OTP is:</p>
-    <h1>{otp}</h1>
-    <p>This OTP is valid for 10 minutes.</p>
-</body>
-</html>
-""",
-        subtype="html",
+    response = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        json=payload,
+        headers=headers,
+        timeout=30,
     )
-    print("SERVER:", os.getenv("BREVO_SMTP_SERVER"))
-    print("PORT:", os.getenv("BREVO_SMTP_PORT"))
-    print("LOGIN:", os.getenv("BREVO_SMTP_LOGIN"))
-    with smtplib.SMTP(
-        os.getenv("BREVO_SMTP_SERVER"),
-        int(os.getenv("BREVO_SMTP_PORT")),
-    ) as server:
 
-        server.starttls()
-
-        server.login(
-            os.getenv("BREVO_SMTP_LOGIN"),
-            os.getenv("BREVO_SMTP_PASSWORD"),
-        )
-
-        server.send_message(msg)
-
-    print("BREVO EMAIL SENT")
+    print("BREVO STATUS:", response.status_code)
+    print("BREVO RESPONSE:", response.text)
