@@ -31,6 +31,11 @@ async def send_otp(
     request: SendOtpRequest,
     db: AsyncSession = Depends(get_db),
 ):
+
+    user_result = await db.execute(select(User).where(User.email == request.email))
+    existing_user = user_result.scalar_one_or_none()
+    if existing_user:
+        return {"success": False, "message": "Account already exists"}
     otp = generate_otp()
 
     await db.execute(delete(OTP).where(OTP.email == request.email))
