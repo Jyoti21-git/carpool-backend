@@ -13,6 +13,7 @@ from app.auth.schemas import (
     SendOtpRequest,
     VerifyOtpRequest,
     SetPasswordRequest,
+    CompleteProfileRequest,
 )
 from app.auth.service import (
     generate_otp,
@@ -148,6 +149,35 @@ async def set_password(
     return {
         "success": True,
         "message": "Password saved",
+    }
+
+
+@router.post("/complete-profile")
+async def complete_profile(
+    request: CompleteProfileRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.email == request.email))
+
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        return {
+            "success": False,
+            "message": "User not found",
+        }
+
+    user.first_name = request.first_name
+    user.last_name = request.last_name
+    user.department = request.department
+    user.phone_number = request.phone_number
+    user.profile_photo = request.profile_photo
+
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": "Profile completed",
     }
 
 

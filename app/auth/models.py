@@ -37,6 +37,31 @@ class User(Base):
         nullable=True,
     )
 
+    first_name = Column(
+        String,
+        nullable=True,
+    )
+
+    last_name = Column(
+        String,
+        nullable=True,
+    )
+
+    department = Column(
+        String,
+        nullable=True,
+    )
+
+    phone_number = Column(
+        String,
+        nullable=True,
+    )
+
+    profile_photo = Column(
+        String,
+        nullable=True,
+    )
+
 
 class OTP(Base):
     __tablename__ = "otps"
