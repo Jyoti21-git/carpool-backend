@@ -12,7 +12,8 @@ from app.auth.models import (
     OTP,
     User,
     Vehicle,
-)from app.auth.schemas import (
+)
+from app.auth.schemas import (
     SendOtpRequest,
     VerifyOtpRequest,
     SetPasswordRequest,
@@ -160,11 +161,7 @@ async def complete_profile(
     request: CompleteProfileRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(User).where(
-            User.email == request.email
-        )
-    )
+    result = await db.execute(select(User).where(User.email == request.email))
 
     user = result.scalar_one_or_none()
 
@@ -180,11 +177,7 @@ async def complete_profile(
     user.phone_number = request.phone_number
     user.profile_photo = request.profile_photo
 
-    await db.execute(
-        delete(Vehicle).where(
-            Vehicle.user_id == user.id
-        )
-    )
+    await db.execute(delete(Vehicle).where(Vehicle.user_id == user.id))
 
     for vehicle in request.vehicles:
         db.add(
