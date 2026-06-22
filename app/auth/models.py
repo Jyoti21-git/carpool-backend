@@ -4,7 +4,10 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
+    ForeignKey,
 )
+
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -60,6 +63,57 @@ class User(Base):
     profile_photo = Column(
         String,
         nullable=True,
+    )
+
+    vehicles = relationship(
+        "Vehicle",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class Vehicle(Base):
+    __tablename__ = "vehicles"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    vehicle_number = Column(
+        String,
+        nullable=False,
+    )
+
+    vehicle_name = Column(
+        String,
+        nullable=False,
+    )
+
+    vehicle_type = Column(
+        String,
+        nullable=False,
+    )
+
+    vehicle_color = Column(
+        String,
+        nullable=False,
+    )
+
+    max_seats = Column(
+        Integer,
+        nullable=False,
+    )
+
+    user = relationship(
+        "User",
+        back_populates="vehicles",
     )
 
 
