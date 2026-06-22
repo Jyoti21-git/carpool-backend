@@ -32,4 +32,7 @@ class CompleteProfileRequest(BaseModel):
     phone_number: str
     profile_photo: str | None = None
 
-    vehicles: list[VehicleRequest]
+    # vehicles: list[VehicleRequest]
+
+
+s

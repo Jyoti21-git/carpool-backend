@@ -7,7 +7,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 
-from sqlalchemy.orm import relationship
+# from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -65,14 +65,14 @@ class User(Base):
         nullable=True,
     )
 
-    vehicles = relationship(
+    """vehicles = relationship(
         "Vehicle",
         back_populates="user",
         cascade="all, delete-orphan",
-    )
+    )"""
 
 
-class Vehicle(Base):
+"""class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id = Column(
@@ -115,6 +115,7 @@ class Vehicle(Base):
         "User",
         back_populates="vehicles",
     )
+"""
 
 
 class OTP(Base):
