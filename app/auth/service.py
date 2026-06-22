@@ -1,7 +1,7 @@
 import os
 import random
 import smtplib
-import requests
+
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
@@ -13,30 +13,50 @@ def generate_otp():
 
 
 def send_otp_email(email: str, otp: str):
-    api_key = os.getenv("RESEND_API_KEY")
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
+    msg = EmailMessage()
 
-    payload = {
-        "from": "onboarding@resend.dev",
-        "to": [email],
-        "subject": "ST Carpool - Login Verification Code",
-        "html": f"""
-        <h2>ST Carpool</h2>
-        <p>Your OTP is:</p>
-        <h1>{otp}</h1>
-        <p>This OTP is valid for 10 minutes.</p>
-        """,
-    }
+    msg["Subject"] = "ST Carpool - Login Verification Code"
 
-    response = requests.post(
-        "https://api.resend.com/emails",
-        headers=headers,
-        json=payload,
+    msg["From"] = os.getenv("BREVO_SMTP_LOGIN")
+
+    msg["To"] = email
+
+    msg.set_content(f"""
+ST Carpool
+
+Your OTP is: {otp}
+
+This OTP is valid for 10 minutes.
+""")
+
+    msg.add_alternative(
+        f"""
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+    <h2>ST Carpool</h2>
+    <p>Your OTP is:</p>
+    <h1>{otp}</h1>
+    <p>This OTP is valid for 10 minutes.</p>
+</body>
+</html>
+""",
+        subtype="html",
     )
 
-    print("RESEND STATUS:", response.status_code)
-    print("RESEND RESPONSE:", response.text)
+    with smtplib.SMTP(
+        os.getenv("BREVO_SMTP_SERVER"),
+        int(os.getenv("BREVO_SMTP_PORT")),
+    ) as server:
+
+        server.starttls()
+
+        server.login(
+            os.getenv("BREVO_SMTP_LOGIN"),
+            os.getenv("BREVO_SMTP_PASSWORD"),
+        )
+
+        server.send_message(msg)
+
+    print("BREVO EMAIL SENT")

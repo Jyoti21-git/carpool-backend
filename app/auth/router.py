@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.auth.dependencies import get_current_user
 from app.auth.jwt import (
     create_access_token,
@@ -13,6 +12,7 @@ from app.auth.models import OTP, User
 from app.auth.schemas import (
     SendOtpRequest,
     VerifyOtpRequest,
+    SetPasswordRequest,
 )
 from app.auth.service import (
     generate_otp,
@@ -123,6 +123,31 @@ async def verify_otp(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
+    }
+
+
+@router.post("/set-password")
+async def set_password(
+    request: SetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.email == request.email))
+
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        return {
+            "success": False,
+            "message": "User not found",
+        }
+
+    user.password_hash = request.password
+
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": "Password saved",
     }
 
 

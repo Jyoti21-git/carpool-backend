@@ -6,6 +6,6 @@ class SendOtpRequest(BaseModel):
     email: EmailStr
 
 
-class VerifyOtpRequest(BaseModel):
+class SetPasswordRequest(BaseModel):
     email: EmailStr
-    otp: str
+    password: str
