@@ -64,67 +64,69 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
-    class Vehicle(Base):
-        __tablename__ = "vehicles"
 
-        id = Column(
-            Integer,
-            primary_key=True,
-        )
+class Vehicle(Base):
+    __tablename__ = "vehicles"
 
-        user_id = Column(
-            Integer,
-            ForeignKey("users.id"),
-            nullable=False,
-        )
+    id = Column(
+        Integer,
+        primary_key=True,
+    )
 
-        vehicle_number = Column(
-            String,
-            nullable=False,
-        )
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
 
-        vehicle_name = Column(
-            String,
-            nullable=False,
-        )
+    vehicle_number = Column(
+        String,
+        nullable=False,
+    )
 
-        vehicle_type = Column(
-            String,
-            nullable=False,
-        )
+    vehicle_name = Column(
+        String,
+        nullable=False,
+    )
 
-        vehicle_color = Column(
-            String,
-            nullable=False,
-        )
+    vehicle_type = Column(
+        String,
+        nullable=False,
+    )
 
-        max_seats = Column(
-            Integer,
-            nullable=False,
-        )
+    vehicle_color = Column(
+        String,
+        nullable=False,
+    )
 
-        user = relationship(
-            "User",
-            back_populates="vehicles",
-        )
+    max_seats = Column(
+        Integer,
+        nullable=False,
+    )
 
-    class OTP(Base):
-        __tablename__ = "otps"
+    user = relationship(
+        "User",
+        back_populates="vehicles",
+    )
 
-        id = Column(Integer, primary_key=True)
 
-        email = Column(
-            String,
-            index=True,
-            nullable=False,
-        )
+class OTP(Base):
+    __tablename__ = "otps"
 
-        otp = Column(
-            String,
-            nullable=False,
-        )
+    id = Column(Integer, primary_key=True)
 
-        expires_at = Column(
-            DateTime(timezone=True),
-            nullable=False,
-        )
+    email = Column(
+        String,
+        index=True,
+        nullable=False,
+    )
+
+    otp = Column(
+        String,
+        nullable=False,
+    )
+
+    expires_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
