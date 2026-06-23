@@ -1,12 +1,6 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Boolean,
-    DateTime,
-)
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 
-# from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -64,76 +58,73 @@ class User(Base):
         nullable=True,
     )
 
-    """vehicles = relationship(
+    vehicles = relationship(
         "Vehicle",
         back_populates="user",
         cascade="all, delete-orphan",
-    )"""
-
-
-"""class Vehicle(Base):
-    __tablename__ = "vehicles"
-
-    id = Column(
-        Integer,
-        primary_key=True,
     )
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id"),
-        nullable=False,
-    )
+    class Vehicle(Base):
+        __tablename__ = "vehicles"
 
-    vehicle_number = Column(
-        String,
-        nullable=False,
-    )
+        id = Column(
+            Integer,
+            primary_key=True,
+        )
 
-    vehicle_name = Column(
-        String,
-        nullable=False,
-    )
+        user_id = Column(
+            Integer,
+            ForeignKey("users.id"),
+            nullable=False,
+        )
 
-    vehicle_type = Column(
-        String,
-        nullable=False,
-    )
+        vehicle_number = Column(
+            String,
+            nullable=False,
+        )
 
-    vehicle_color = Column(
-        String,
-        nullable=False,
-    )
+        vehicle_name = Column(
+            String,
+            nullable=False,
+        )
 
-    max_seats = Column(
-        Integer,
-        nullable=False,
-    )
+        vehicle_type = Column(
+            String,
+            nullable=False,
+        )
 
-    user = relationship(
-        "User",
-        back_populates="vehicles",
-    )
-"""
+        vehicle_color = Column(
+            String,
+            nullable=False,
+        )
 
+        max_seats = Column(
+            Integer,
+            nullable=False,
+        )
 
-class OTP(Base):
-    __tablename__ = "otps"
+        user = relationship(
+            "User",
+            back_populates="vehicles",
+        )
 
-    id = Column(Integer, primary_key=True)
+    class OTP(Base):
+        __tablename__ = "otps"
 
-    email = Column(
-        String,
-        index=True,
-        nullable=False,
-    )
+        id = Column(Integer, primary_key=True)
 
-    otp = Column(
-        String,
-        nullable=False,
-    )
+        email = Column(
+            String,
+            index=True,
+            nullable=False,
+        )
 
-    expires_at = Column(
-        DateTime(timezone=True),
-        nullable=False,
-    )
+        otp = Column(
+            String,
+            nullable=False,
+        )
+
+        expires_at = Column(
+            DateTime(timezone=True),
+            nullable=False,
+        )

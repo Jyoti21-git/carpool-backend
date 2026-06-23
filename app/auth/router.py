@@ -11,7 +11,7 @@ from app.auth.jwt import (
 from app.auth.models import (
     OTP,
     User,
-    #    Vehicle,
+    Vehicle,
 )
 from app.auth.schemas import (
     SendOtpRequest,
@@ -176,35 +176,21 @@ async def complete_profile(
     user.department = request.department
     user.phone_number = request.phone_number
     user.profile_photo = request.profile_photo
+    await db.execute(delete(Vehicle).where(Vehicle.user_id == user.id))
+
+    for vehicle in request.vehicles:
+        db.add(
+            Vehicle(
+                user_id=user.id,
+                vehicle_number=vehicle.vehicle_number,
+                vehicle_name=vehicle.vehicle_name,
+                vehicle_type=vehicle.vehicle_type,
+                vehicle_color=vehicle.vehicle_color,
+                max_seats=vehicle.max_seats,
+            )
+        )
 
     await db.commit()
-
-    return {
-        "success": True,
-        "message": "Profile completed",
-    }
-    result = await db.execute(select(User).where(User.email == request.email))
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        return {
-            "success": False,
-            "message": "User not found",
-        }
-
-    user.first_name = request.first_name
-    user.last_name = request.last_name
-    user.department = request.department
-    user.phone_number = request.phone_number
-    user.profile_photo = request.profile_photo
-
-    await db.commit()
-
-    return {
-        "success": True,
-        "message": "Profile completed",
-    }
 
 
 @router.get("/me")
